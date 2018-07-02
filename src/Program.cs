@@ -27,7 +27,7 @@ namespace Nikse.SubtitleEdit
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Main());
+            Application.Run(new GoogleOrMicrosoftTranslate());
         }
 
         // Handle the UI exceptions by showing a dialog box, and asking the user whether or not they wish to abort execution.

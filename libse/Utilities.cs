@@ -80,22 +80,7 @@ namespace Nikse.SubtitleEdit.Core
             return string.Format("{0:0.0} gb", (float)fileSize / (1024 * 1024 * 1024));
         }
 
-        /// <summary>
-        /// Downloads the requested resource as a <see cref="String"/> using the configured <see cref="WebProxy"/>.
-        /// </summary>
-        /// <param name="address">A <see cref="String"/> containing the URI to download.</param>
-        /// <param name="encoding">Encoding for source text</param>
-        /// <returns>A <see cref="String"/> containing the requested resource.</returns>
-        public static string DownloadString(string address, Encoding encoding = null)
-        {
-            using (var wc = new WebClient())
-            {
-                wc.Proxy = GetProxy();
-                if (encoding != null)
-                    wc.Encoding = encoding;
-                return wc.DownloadString(address).Trim();
-            }
-        }
+       
 
         public static void SetSecurityProtocol()
         {
@@ -107,26 +92,7 @@ namespace Nikse.SubtitleEdit.Core
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | (SecurityProtocolType)tls12Protocol;
         }
 
-        public static WebProxy GetProxy()
-        {
-            if (!string.IsNullOrEmpty(Configuration.Settings.Proxy.ProxyAddress))
-            {
-                var proxy = new WebProxy(Configuration.Settings.Proxy.ProxyAddress);
-
-                if (!string.IsNullOrEmpty(Configuration.Settings.Proxy.UserName))
-                {
-                    if (string.IsNullOrEmpty(Configuration.Settings.Proxy.Domain))
-                        proxy.Credentials = new NetworkCredential(Configuration.Settings.Proxy.UserName, Configuration.Settings.Proxy.DecodePassword());
-                    else
-                        proxy.Credentials = new NetworkCredential(Configuration.Settings.Proxy.UserName, Configuration.Settings.Proxy.DecodePassword(), Configuration.Settings.Proxy.Domain);
-                }
-                else
-                    proxy.UseDefaultCredentials = true;
-
-                return proxy;
-            }
-            return null;
-        }
+     
 
         private static bool IsPartOfNumber(string s, int position)
         {
@@ -1076,13 +1042,7 @@ namespace Nikse.SubtitleEdit.Core
             return null;
         }
 
-        /// <summary>
-        /// UrlEncodes a string without the requirement for System.Web
-        /// </summary>
-        public static string UrlEncode(string text)
-        {
-            return Uri.EscapeDataString(text);
-        }
+       
 
         /// <summary>
         /// UrlDecodes a string without requiring System.Web

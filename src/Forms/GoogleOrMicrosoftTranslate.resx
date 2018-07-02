@@ -117,4 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="txtSourceText.Text" xml:space="preserve">
+    <value>What has hindered finishing the cleansing of
+the sanctuary?
+* How much longer will the church talk about
+the latter rain before the blessing actually comes?
+* Does God really call us to the standard of
+character perfection while we still have a sinful
+nature? </value>
+  </data>
 </root>

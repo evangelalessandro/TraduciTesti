@@ -1,7 +1,6 @@
-﻿using Nikse.SubtitleEdit.Controls;
+﻿
 using Nikse.SubtitleEdit.Core;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
-using Nikse.SubtitleEdit.Logic;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -33,22 +32,7 @@ namespace Nikse.SubtitleEdit.Forms
             ItalicTwoLines
         }
 
-        private static string GoogleTranslateUrl
-        {
-            get
-            {
-                var url = Configuration.Settings.Tools.GoogleTranslateUrl;
-                if (string.IsNullOrEmpty(url) || !url.Contains(".google.", StringComparison.OrdinalIgnoreCase))
-                {
-                    return "https://translate.google.com/";
-                }
-                if (!url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-                {
-                    url = "https://" + url;
-                }
-                return url.TrimEnd('/') + '/';
-            }
-        }
+        
 
         private FormattingType[] _formattingTypes;
         private bool[] _autoSplit;
@@ -57,26 +41,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private string _targetTwoLetterIsoLanguageName;
 
-        public class ComboBoxItem
-        {
-            public string Text { get; set; }
-            public string Value { get; set; }
-
-            public ComboBoxItem(string text, string value)
-            {
-                if (text.Length > 1)
-                    text = char.ToUpper(text[0]) + text.Substring(1).ToLower();
-                Text = text;
-
-                Value = value;
-            }
-
-            public override string ToString()
-            {
-                return Text;
-            }
-        }
-
+       
         public Subtitle TranslatedSubtitle => _translatedSubtitle;
 
         public GoogleTranslate()
@@ -421,174 +386,7 @@ namespace Nikse.SubtitleEdit.Forms
             return PostTranslate(result);
         }
 
-        public static string TranslateTextViaApi(string input, string languagePair)
-        {
-            //string googleApiKey = "ABQIAAAA4j5cWwa3lDH0RkZceh7PjBTDmNAghl5kWSyuukQ0wtoJG8nFBxRPlalq-gAvbeCXMCkmrysqjXV1Gw";
-            string googleApiKey = Configuration.Settings.Tools.GoogleApiKey;
-
-            input = input.Replace(Environment.NewLine, NewlineString);
-            input = input.Replace("'", "&apos;");
-            // create the web request to the Google Translate REST interface
-
-            //API V 1.0
-            var uri = new Uri("http://ajax.googleapis.com/ajax/services/language/translate?v=1.0&q=" + Utilities.UrlEncode(input) + "&langpair=" + languagePair + "&key=" + googleApiKey);
-
-            //API V 2.0 ?
-            //string[] arr = languagePair.Split('|');
-            //string from = arr[0];
-            //string to = arr[1];
-            //string url = String.Format("https://www.googleapis.com/language/translate/v2?key={3}&q={0}&source={1}&target={2}", HttpUtility.UrlEncode(input), from, to, googleApiKey);
-
-            var request = WebRequest.Create(uri);
-            request.Proxy = Utilities.GetProxy();
-            var response = request.GetResponse();
-            var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
-            string content = reader.ReadToEnd();
-
-            var indexOfTranslatedText = content.IndexOf("{\"translatedText\":", StringComparison.Ordinal);
-            if (indexOfTranslatedText >= 0)
-            {
-                var start = indexOfTranslatedText + 19;
-                int end = content.IndexOf("\"}", start, StringComparison.Ordinal);
-                string translatedText = content.Substring(start, end - start);
-                string test = translatedText.Replace("\\u003c", "<");
-                test = test.Replace("\\u003e", ">");
-                test = test.Replace("\\u0026#39;", "'");
-                test = test.Replace("\\u0026amp;", "&");
-                test = test.Replace("\\u0026quot;", "\"");
-                test = test.Replace("\\u0026apos;", "'");
-                test = test.Replace("\\u0026lt;", "<");
-                test = test.Replace("\\u0026gt;", ">");
-                test = test.Replace("\\u003d", "=");
-                test = test.Replace("\\u200b", string.Empty);
-                test = test.Replace("\\\"", "\"");
-                test = test.Replace(" <br/>", Environment.NewLine);
-                test = test.Replace("<br/>", Environment.NewLine);
-                test = RemovePStyleParameters(test);
-                return test;
-            }
-            return string.Empty;
-        }
-
-        private static string RemovePStyleParameters(string test)
-        {
-            var startPosition = test.IndexOf("<p style", StringComparison.Ordinal);
-            if (startPosition >= 0)
-            {
-                var endPosition = test.IndexOf('>', startPosition + 8);
-                if (endPosition > 0)
-                    return test.Remove(startPosition + 2, endPosition - startPosition - 2);
-            }
-            return test;
-        }
-
-        public static Encoding GetScreenScrapingEncoding(string languagePair)
-        {
-            try
-            {
-                string url = String.Format(GoogleTranslateUrl + "?hl=en&eotf=1&sl={0}&tl={1}&q={2}", languagePair.Substring(0, 2), languagePair.Substring(3), "123 456");
-                var result = Utilities.DownloadString(url).ToLower();
-                int idx = result.IndexOf("charset", StringComparison.Ordinal);
-                int end = result.IndexOf('"', idx + 8);
-                string charset = result.Substring(idx, end - idx).Replace("charset=", string.Empty);
-                return Encoding.GetEncoding(charset); // "koi8-r");
-            }
-            catch
-            {
-                return Encoding.Default;
-            }
-        }
-
-        /// <summary>
-        /// Translate Text using Google Translate API's
-        /// Google URL - https://translate.google.com/?hl=en&amp;ie=UTF8&amp;text={0}&amp;langpair={1}
-        /// </summary>
-        /// <param name="input">Input string</param>
-        /// <param name="languagePair">2 letter Language Pair, delimited by "|".
-        /// E.g. "ar|en" language pair means to translate from Arabic to English</param>
-        /// <param name="encoding">Encoding to use when downloading text</param>
-        /// <param name="romanji">Get Romanjii text (made during Japanese) but in a separate div tag</param>
-        /// <returns>Translated to String</returns>
-        public static string TranslateTextViaScreenScraping(string input, string languagePair, Encoding encoding, bool romanji)
-        {
-            string url = string.Format(GoogleTranslateUrl + "?hl=en&eotf=1&sl={0}&tl={1}&q={2}", languagePair.Substring(0, 2), languagePair.Substring(3), Utilities.UrlEncode(input));
-            var result = Utilities.DownloadString(url, encoding);
-
-            var sb = new StringBuilder();
-            if (romanji)
-            {
-                int startIndex = result.IndexOf("<div id=res-translit", StringComparison.Ordinal);
-                if (startIndex > 0)
-                {
-                    startIndex = result.IndexOf('>', startIndex);
-                    if (startIndex > 0)
-                    {
-                        startIndex++;
-                        int endIndex = result.IndexOf("</div>", startIndex, StringComparison.Ordinal);
-                        string translatedText = result.Substring(startIndex, endIndex - startIndex);
-                        string test = WebUtility.HtmlDecode(translatedText);
-                        test = test.Replace("= =", SplitterString).Replace("  ", " ");
-                        test = test.Replace("_ _", NewlineString).Replace("  ", " ");
-                        sb.Append(test);
-                    }
-                }
-            }
-            else
-            {
-                int startIndex = result.IndexOf("<span id=result_box", StringComparison.Ordinal);
-                if (startIndex > 0)
-                {
-                    startIndex = result.IndexOf("<span title=", startIndex, StringComparison.Ordinal);
-                    while (startIndex > 0)
-                    {
-                        startIndex = result.IndexOf('>', startIndex);
-                        while (startIndex > 0 && result.Substring(startIndex - 3, 4) == "<br>")
-                            startIndex = result.IndexOf('>', startIndex + 1);
-                        if (startIndex > 0)
-                        {
-                            startIndex++;
-                            int endIndex = result.IndexOf("</span>", startIndex, StringComparison.Ordinal);
-                            string translatedText = result.Substring(startIndex, endIndex - startIndex);
-                            string test = WebUtility.HtmlDecode(translatedText);
-                            sb.Append(test);
-                            startIndex = result.IndexOf("<span title=", startIndex, StringComparison.Ordinal);
-                        }
-                    }
-                }
-            }
-            string res = sb.ToString();
-            res = res.Replace("<br><br><br>", "|");
-            res = res.Replace("\r\n", "\n");
-            res = res.Replace("\r", "\n");
-            res = res.Replace(NewlineString, Environment.NewLine);
-            res = res.Replace("<BR>", Environment.NewLine);
-            res = res.Replace("<BR />", Environment.NewLine);
-            res = res.Replace("<BR/>", Environment.NewLine);
-            res = res.Replace("< br />", Environment.NewLine);
-            res = res.Replace("< br / >", Environment.NewLine);
-            res = res.Replace("<br / >", Environment.NewLine);
-            res = res.Replace(" <br/>", Environment.NewLine);
-            res = res.Replace(" <br/>", Environment.NewLine);
-            res = res.Replace("<br/>", Environment.NewLine);
-            res = res.Replace("<br />", Environment.NewLine);
-            res = res.Replace("<br>", Environment.NewLine);
-            res = res.Replace("</ font>", "</font>");
-            res = res.Replace("</ font >", "</font>");
-            res = res.Replace("<font color = \"# ", "<font color=\"#");
-            res = res.Replace("<font color = ", "<font color=");
-            res = res.Replace("</ b >", "</b>");
-            res = res.Replace("</ b>", "</b>");
-            res = res.Replace("  ", " ").Trim();
-            res = res.Replace(Environment.NewLine + Environment.NewLine, Environment.NewLine);
-            res = res.Replace(Environment.NewLine + " ", Environment.NewLine);
-            res = res.Replace(Environment.NewLine + " ", Environment.NewLine);
-            res = res.Replace(" " + Environment.NewLine, Environment.NewLine);
-            res = res.Replace(" " + Environment.NewLine, Environment.NewLine).Trim();
-            int end = res.LastIndexOf("<p>", StringComparison.Ordinal);
-            if (end > 0)
-                res = res.Substring(0, end);
-            return res;
-        }
+       
 
         public void FillComboWithLanguages(ComboBox comboBox)
         {
@@ -675,119 +473,7 @@ namespace Nikse.SubtitleEdit.Forms
             };
         }
 
-        public void FillComboWithGoogleLanguages(ComboBox comboBox)
-        {
-            comboBox.Items.Add(new ComboBoxItem("AFRIKAANS", "af"));
-            comboBox.Items.Add(new ComboBoxItem("ALBANIAN", "sq"));
-            comboBox.Items.Add(new ComboBoxItem("AMHARIC", "am"));
-            comboBox.Items.Add(new ComboBoxItem("ARABIC", "ar"));
-            comboBox.Items.Add(new ComboBoxItem("ARMENIAN", "hy"));
-            comboBox.Items.Add(new ComboBoxItem("AZERBAIJANI", "az"));
-            comboBox.Items.Add(new ComboBoxItem("BASQUE", "eu"));
-            comboBox.Items.Add(new ComboBoxItem("BELARUSIAN", "be"));
-            comboBox.Items.Add(new ComboBoxItem("BENGALI", "bn"));
-            comboBox.Items.Add(new ComboBoxItem("BOSNIAN", "bs"));
-            comboBox.Items.Add(new ComboBoxItem("BULGARIAN", "bg"));
-            comboBox.Items.Add(new ComboBoxItem("BURMESE", "my"));
-            comboBox.Items.Add(new ComboBoxItem("CATALAN", "ca"));
-            comboBox.Items.Add(new ComboBoxItem("CEBUANO", "ceb"));
-            comboBox.Items.Add(new ComboBoxItem("CHICHEWA", "ny"));
-            comboBox.Items.Add(new ComboBoxItem("CHINESE", "zh"));
-            comboBox.Items.Add(new ComboBoxItem("CHINESE_SIMPLIFIED", "zh-CN"));
-            comboBox.Items.Add(new ComboBoxItem("CHINESE_TRADITIONAL", "zh-TW"));
-            comboBox.Items.Add(new ComboBoxItem("CORSICAN", "co"));
-            comboBox.Items.Add(new ComboBoxItem("CROATIAN", "hr"));
-            comboBox.Items.Add(new ComboBoxItem("CZECH", "cs"));
-            comboBox.Items.Add(new ComboBoxItem("DANISH", "da"));
-            comboBox.Items.Add(new ComboBoxItem("DUTCH", "nl"));
-            comboBox.Items.Add(new ComboBoxItem("ENGLISH", "en"));
-            comboBox.Items.Add(new ComboBoxItem("ESPERANTO", "eo"));
-            comboBox.Items.Add(new ComboBoxItem("ESTONIAN", "et"));
-            comboBox.Items.Add(new ComboBoxItem("FILIPINO", "tl"));
-            comboBox.Items.Add(new ComboBoxItem("FINNISH", "fi"));
-            comboBox.Items.Add(new ComboBoxItem("FRENCH", "fr"));
-            comboBox.Items.Add(new ComboBoxItem("FRISIAN", "fy"));
-            comboBox.Items.Add(new ComboBoxItem("GALICIAN", "gl"));
-            comboBox.Items.Add(new ComboBoxItem("GEORGIAN", "ka"));
-            comboBox.Items.Add(new ComboBoxItem("GERMAN", "de"));
-            comboBox.Items.Add(new ComboBoxItem("GREEK", "el"));
-            comboBox.Items.Add(new ComboBoxItem("GUJARATI", "gu"));
-            comboBox.Items.Add(new ComboBoxItem("HAITIAN CREOLE", "ht"));
-            comboBox.Items.Add(new ComboBoxItem("HAUSA", "ha"));
-            comboBox.Items.Add(new ComboBoxItem("HAWAIIAN", "haw"));
-            comboBox.Items.Add(new ComboBoxItem("HEBREW", "iw"));
-            comboBox.Items.Add(new ComboBoxItem("HINDI", "hi"));
-            comboBox.Items.Add(new ComboBoxItem("HMOUNG", "hmn"));
-            comboBox.Items.Add(new ComboBoxItem("HUNGARIAN", "hu"));
-            comboBox.Items.Add(new ComboBoxItem("ICELANDIC", "is"));
-            comboBox.Items.Add(new ComboBoxItem("IGBO", "ig"));
-            comboBox.Items.Add(new ComboBoxItem("INDONESIAN", "id"));
-            comboBox.Items.Add(new ComboBoxItem("IRISH", "ga"));
-            comboBox.Items.Add(new ComboBoxItem("ITALIAN", "it"));
-            comboBox.Items.Add(new ComboBoxItem("JAPANESE", "ja"));
-            comboBox.Items.Add(new ComboBoxItem("JAVANESE", "jw"));
-            comboBox.Items.Add(new ComboBoxItem("KANNADA", "kn"));
-            comboBox.Items.Add(new ComboBoxItem("KAZAKH", "kk"));
-            comboBox.Items.Add(new ComboBoxItem("KHMER", "km"));
-            comboBox.Items.Add(new ComboBoxItem("KOREAN", "ko"));
-            comboBox.Items.Add(new ComboBoxItem("KURDISH", "ku"));
-            comboBox.Items.Add(new ComboBoxItem("KYRGYZ", "ky"));
-            comboBox.Items.Add(new ComboBoxItem("LAO", "lo"));
-            comboBox.Items.Add(new ComboBoxItem("LATIN", "la"));
-            comboBox.Items.Add(new ComboBoxItem("LATVIAN", "lv"));
-            comboBox.Items.Add(new ComboBoxItem("LITHUANIAN", "lt"));
-            comboBox.Items.Add(new ComboBoxItem("LUXEMBOURGISH", "lb"));
-            comboBox.Items.Add(new ComboBoxItem("MACEDONIAN", "mk"));
-            comboBox.Items.Add(new ComboBoxItem("MALAY", "ms"));
-            comboBox.Items.Add(new ComboBoxItem("MALAGASY", "mg"));
-            comboBox.Items.Add(new ComboBoxItem("MALAYALAM", "ml"));
-            comboBox.Items.Add(new ComboBoxItem("MALTESE", "mt"));
-            comboBox.Items.Add(new ComboBoxItem("MAORI", "mi"));
-            comboBox.Items.Add(new ComboBoxItem("MARATHI", "mr"));
-            comboBox.Items.Add(new ComboBoxItem("MONGOLIAN", "mn"));
-            comboBox.Items.Add(new ComboBoxItem("MYANMAR", "my"));
-            comboBox.Items.Add(new ComboBoxItem("NEPALI", "ne"));
-            comboBox.Items.Add(new ComboBoxItem("NORWEGIAN", "no"));
-            comboBox.Items.Add(new ComboBoxItem("PASHTO", "ps"));
-            comboBox.Items.Add(new ComboBoxItem("PERSIAN", "fa"));
-            comboBox.Items.Add(new ComboBoxItem("POLISH", "pl"));
-            comboBox.Items.Add(new ComboBoxItem("PORTUGUESE", "pt"));
-            comboBox.Items.Add(new ComboBoxItem("PUNJABI", "pa"));
-            comboBox.Items.Add(new ComboBoxItem("ROMANIAN", "ro"));
-
-            if (comboBox == comboBoxTo && !_googleApiNotWorking)
-                comboBox.Items.Add(new ComboBoxItem("ROMANJI", "romanji"));
-
-            comboBox.Items.Add(new ComboBoxItem("RUSSIAN", "ru"));
-            comboBox.Items.Add(new ComboBoxItem("SAMOAN", "sm"));
-            comboBox.Items.Add(new ComboBoxItem("SCOTS GAELIC", "gd"));
-            comboBox.Items.Add(new ComboBoxItem("SERBIAN", "sr"));
-            comboBox.Items.Add(new ComboBoxItem("SESOTHO", "st"));
-            comboBox.Items.Add(new ComboBoxItem("SHONA", "sn"));
-            comboBox.Items.Add(new ComboBoxItem("SINDHI", "sd"));
-            comboBox.Items.Add(new ComboBoxItem("SINHALA", "si"));
-            comboBox.Items.Add(new ComboBoxItem("SLOVAK", "sk"));
-            comboBox.Items.Add(new ComboBoxItem("SLOVENIAN", "sl"));
-            comboBox.Items.Add(new ComboBoxItem("SOMALI", "so"));
-            comboBox.Items.Add(new ComboBoxItem("SPANISH", "es"));
-            comboBox.Items.Add(new ComboBoxItem("SUNDANESE", "su"));
-            comboBox.Items.Add(new ComboBoxItem("SWAHILI", "sw"));
-            comboBox.Items.Add(new ComboBoxItem("SWEDISH", "sv"));
-            comboBox.Items.Add(new ComboBoxItem("TAJIK", "tg"));
-            comboBox.Items.Add(new ComboBoxItem("TAMIL", "ta"));
-            comboBox.Items.Add(new ComboBoxItem("TELUGU", "te"));
-            comboBox.Items.Add(new ComboBoxItem("THAI", "th"));
-            comboBox.Items.Add(new ComboBoxItem("TURKISH", "tr"));
-            comboBox.Items.Add(new ComboBoxItem("UKRAINIAN", "uk"));
-            comboBox.Items.Add(new ComboBoxItem("URDU", "ur"));
-            comboBox.Items.Add(new ComboBoxItem("UZBEK", "uz"));
-            comboBox.Items.Add(new ComboBoxItem("VIETNAMESE", "vi"));
-            comboBox.Items.Add(new ComboBoxItem("WELSH", "cy"));
-            comboBox.Items.Add(new ComboBoxItem("XHOSA", "xh"));
-            comboBox.Items.Add(new ComboBoxItem("YIDDISH", "yi"));
-            comboBox.Items.Add(new ComboBoxItem("YORUBA", "yo"));
-            comboBox.Items.Add(new ComboBoxItem("ZULU", "zu"));
-        }
+        
 
         private void LinkLabel1LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
