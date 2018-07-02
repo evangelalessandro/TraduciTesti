@@ -133,7 +133,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Transparent Background.png" />
-    <Content Include="Icons\RemoveTextForHI.png" />
     <Content Include="Languages\ar-EG.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -248,22 +247,6 @@
     <None Include="Resources\pictureBoxNoFSOver.Image.png" />
     <None Include="Resources\pictureBoxNoFSDown.Image.png" />
     <None Include="Resources\pictureBoxNoFS.Image.png" />
-    <None Include="Icons\connect.png" />
-    <None Include="Icons\Donate.png" />
-    <Content Include="Icons\SE.ico" />
-    <Content Include="Icons\Find.png" />
-    <Content Include="Icons\FixCommonErrors.png" />
-    <Content Include="Icons\Help.png" />
-    <Content Include="Icons\New.png" />
-    <Content Include="Icons\Open.png" />
-    <Content Include="Icons\Replace.png" />
-    <Content Include="Icons\Save.png" />
-    <Content Include="Icons\SaveAs.png" />
-    <Content Include="Icons\Settings.png" />
-    <Content Include="Icons\SpellCheck.png" />
-    <Content Include="Icons\VideoToggle.png" />
-    <Content Include="Icons\VisualSync.png" />
-    <Content Include="Icons\WaveformToggle.png" />
     <None Include="Resources\pictureBoxFS.Image.png" />
     <None Include="Resources\pictureBoxFSDown.Image.png" />
     <None Include="Resources\pictureBoxFSOver.Image.png" />
