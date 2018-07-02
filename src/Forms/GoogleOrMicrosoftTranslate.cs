@@ -9,7 +9,7 @@ using System.Net;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Nikse.SubtitleEdit.Forms
+namespace TraslatePdf.Forms
 {
 	public sealed partial class GoogleOrMicrosoftTranslate : Form
 	{

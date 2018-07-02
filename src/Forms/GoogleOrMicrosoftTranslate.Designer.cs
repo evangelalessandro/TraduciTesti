@@ -1,4 +1,4 @@
-﻿namespace Nikse.SubtitleEdit.Forms
+﻿namespace TraslatePdf.Forms
 {
     partial class GoogleOrMicrosoftTranslate
     {

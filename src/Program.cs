@@ -1,10 +1,10 @@
-﻿using Nikse.SubtitleEdit.Forms;
+﻿using TraslatePdf.Forms;
 using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace Nikse.SubtitleEdit
+namespace TraslatePdf
 {
     internal static class Program
     {
