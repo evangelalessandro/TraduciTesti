@@ -14,7 +14,7 @@ namespace TraslatePdf.Forms
 	public sealed partial class GoogleOrMicrosoftTranslate : Form
 	{
 		public string TranslatedText { get; set; }
-		private bool	_googleApiNotWorking = false; // google has closed their free api service :(
+		private bool _googleApiNotWorking = false; // google has closed their free api service :(
 
 		public void FillComboWithGoogleLanguages(ComboBox comboBox)
 		{
@@ -192,7 +192,7 @@ namespace TraslatePdf.Forms
 			}
 		}
 
-	 
+
 
 		private void GoogleOrMicrosoftTranslate_Shown(object sender, EventArgs e)
 		{
@@ -203,6 +203,7 @@ namespace TraslatePdf.Forms
 		private void Translate()
 		{
 			Cursor = Cursors.WaitCursor;
+			
 			try
 			{
 				if (comboBoxFrom.SelectedItem == null)
@@ -222,6 +223,7 @@ namespace TraslatePdf.Forms
 				var txt = txtSourceText.Text;
 				var txtChunk = "";
 				var lenght = 4500;
+				var separetor = ".";
 				while (txt.Length > 0)
 				{
 					if (txt.Length > lenght)
@@ -234,8 +236,18 @@ namespace TraslatePdf.Forms
 						}
 						else
 						{
-							txtChunk = txt;
-							txt = "";
+
+							chunk = txt.IndexOf(separetor, lenght);
+							if (chunk != -1)
+							{
+								txtChunk = txt.Substring(0, chunk);
+								txt = txt.Remove(0, chunk + separetor.Length);
+							}
+							else
+							{
+								txtChunk = txt;
+								txt = "";
+							}
 						}
 					}
 					else
@@ -243,6 +255,9 @@ namespace TraslatePdf.Forms
 						txtChunk = txt;
 						txt = "";
 					}
+					sbOut.AppendLine("");
+					sbOut.AppendLine(txtChunk);
+					sbOut.AppendLine("");
 					if (sbOut.Length == 0)
 					{
 						sbOut.Append(
@@ -399,7 +414,7 @@ namespace TraslatePdf.Forms
 		private const string NewlineString = "\n";
 		internal class SettingGoogle
 		{
-			public static string GoogleTranslateUrl { get { return "translate.google.com"; }}
+			public static string GoogleTranslateUrl { get { return "translate.google.com"; } }
 
 			public static string GoogleApiKey {
 				get {
@@ -412,7 +427,8 @@ namespace TraslatePdf.Forms
 				}
 			}
 			public static string GoogleTranslateLastTargetLanguage {
-				get { return "en";
+				get {
+					return "en";
 				}
 			}
 		}
@@ -442,7 +458,7 @@ namespace TraslatePdf.Forms
 		/// <returns>Translated to String</returns>
 		public static string TranslateTextViaScreenScraping(string input, string languagePair, Encoding encoding, bool romanji)
 		{
-			string url = string.Format(GoogleTranslateUrl + "?hl=en&eotf=1&sl={0}&tl={1}&q={2}", languagePair.Substring(0, 2), 
+			string url = string.Format(GoogleTranslateUrl + "?hl=en&eotf=1&sl={0}&tl={1}&q={2}", languagePair.Substring(0, 2),
 				languagePair.Substring(3), UrlEncode(input));
 			var result = DownloadString(url, encoding);
 
